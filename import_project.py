@@ -2,15 +2,16 @@ import requests
 import pdfplumber
 import re
 import json
+import os
 
 # ===========================================================
 # CONFIG
 # ===========================================================
-BASE_URL = "https://propertprodjango.onrender.com/api/dev/v1"
-ORGANIZATION_ID = 2
+BASE_URL = os.getenv("PROPERTPRO_API_BASE_URL", "").rstrip("/")
+ORGANIZATION_ID = os.getenv("PROPERTPRO_ORGANIZATION_ID")
 SESSION = requests.Session()
 
-ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzNzI4NzgzLCJpYXQiOjE3NjM3MTQzODMsImp0aSI6ImUyNjA1MjE2YjZmNTQ5MTFhYjBhMzYyN2Q4ZjY1MDNkIiwidXNlcl9pZCI6MTJ9.DfO4NGulNL9dG8iG0WscVuOa8blafCS0ci6rALx8dRU"
+ACCESS_TOKEN = os.getenv("PROPERTPRO_ACCESS_TOKEN")
 
 ALLOWED_PROJECTS = {
     "Marelia Valley",
@@ -24,6 +25,25 @@ ALLOWED_PROJECTS = {
     "Adonidos Gardens",
     "Panorama Apartments",
 }
+
+# ===========================================================
+# CONFIGURATION VALIDATION
+# ===========================================================
+def require_configuration():
+    global ORGANIZATION_ID
+    required = {
+        "PROPERTPRO_API_BASE_URL": BASE_URL,
+        "PROPERTPRO_ORGANIZATION_ID": ORGANIZATION_ID,
+        "PROPERTPRO_ACCESS_TOKEN": ACCESS_TOKEN,
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise SystemExit(f"Missing required environment variables: {', '.join(missing)}")
+    try:
+        ORGANIZATION_ID = int(ORGANIZATION_ID)
+    except ValueError as exc:
+        raise SystemExit("PROPERTPRO_ORGANIZATION_ID must be an integer") from exc
+
 
 # ===========================================================
 # API HELPERS
@@ -346,4 +366,5 @@ def import_pdf(pdf_path):
 # RUN SCRIPT
 # ===========================================================
 if __name__ == "__main__":
-    import_pdf("FullPricelist_B-1.pdf")
+    require_configuration()
+    import_pdf(os.getenv("PRICE_LIST_PDF", "FullPricelist_B-1.pdf"))
